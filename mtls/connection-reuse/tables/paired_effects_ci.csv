@@ -1,0 +1,7 @@
+load,contrast,paired_mean_diff_pct_or_pp,ci95_low,ci95_high,ratio_of_mean_throughput_pct,n_rounds,two_sided_p_value_exploratory
+low,fresh,-3.117673,-5.877064,-0.358282,-3.128770,5,0.034951
+low,keepalive,-1.102932,-3.313646,1.107781,-1.138638,5,0.238239
+low,keepalive_minus_fresh,2.014741,0.612539,3.416943,,5,0.016274
+high,fresh,-2.510421,-4.438883,-0.581959,-2.521054,5,0.022471
+high,keepalive,-0.787193,-2.431635,0.857248,-0.799665,5,0.254563
+high,keepalive_minus_fresh,1.723228,-0.453820,3.900276,,5,0.092893
