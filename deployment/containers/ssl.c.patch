@@ -1,0 +1,10 @@
+--- ssl-orig.c	2026-11-19 23:02:00.654138375 +0100
++++ ssl-josep.c	2026-11-19 23:02:52.416189028 +0100
+@@ -16,6 +16,7 @@
+     OpenSSL_add_all_algorithms();
+ 
+     if ((ctx = SSL_CTX_new(SSLv23_client_method()))) {
++        SSL_CTX_config(ctx, "client");
+         SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
+         SSL_CTX_set_verify_depth(ctx, 0);
+         SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
