@@ -1,0 +1,35 @@
+# /etc/httpd/conf.d/virtual-host-C2.conf
+# C2 - Classical CNSA 2.0: KEX secp521r1 (P-521) DIGITAL SIGNATURE ECDSA P-521 / SHA-512
+# Only TLS 1.3, only secp521r1
+
+Listen 9443 https
+
+<VirtualHost *:9443>
+    ServerName {{ webserver }}
+
+    DocumentRoot /var/www/c2
+    LogFormat "%h %t \"%r\" %>s %b %D %{SSL_PROTOCOL}x %{SSL_CIPHER}x %{SSL_GROUP}x %{SSL_SERVER_A_SIG}x" pqc
+    ErrorLog  /var/log/httpd/c2-classical_error.log
+    CustomLog /var/log/httpd/c2-classical_access.log pqc
+
+    SSLEngine on
+
+    # TLS 1.3
+    SSLProtocol -all +TLSv1.3
+
+    # KEX: P-521 (secp521r1)
+    SSLOpenSSLConfCmd Groups secp521r1
+    # Ciphersuite
+    SSLOpenSSLConfCmd Ciphersuites {{ tls_cipher }}    
+
+    # Cert chain
+    SSLCertificateChainFile    /etc/pki/regular-C2-CA/certs/regular-C2.chain.pem
+
+    # Cert
+    SSLCertificateKeyFile /etc/pki/regular-C2-CA/private/virtualhost.key.pem
+    SSLCertificateFile    /etc/pki/regular-C2-CA/certs/virtualhost.cert.pem
+
+    <Directory /var/www/c2>
+        Require all granted
+    </Directory>
+</VirtualHost>

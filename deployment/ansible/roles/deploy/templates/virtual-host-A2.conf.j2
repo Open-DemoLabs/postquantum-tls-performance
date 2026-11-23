@@ -1,0 +1,35 @@
+# /etc/httpd/conf.d/virtual-host-A2.conf
+# A2 - Classical Enterprise: KEX secp384r1 (P-384) DIGITAL SIGNATURE ECDSA P-384 / SHA-384
+# Only TLS 1.3, only secp384r1
+
+Listen 8443 https
+
+<VirtualHost *:8443>
+    ServerName {{ webserver }}
+
+    DocumentRoot /var/www/a2
+    LogFormat "%h %t \"%r\" %>s %b %D %{SSL_PROTOCOL}x %{SSL_CIPHER}x %{SSL_GROUP}x %{SSL_SERVER_A_SIG}x" pqc
+    ErrorLog  /var/log/httpd/a2_errorlog
+    CustomLog /var/log/httpd/a2_access.log pqc
+
+    SSLEngine on
+
+    # TLS 1.3 
+    SSLProtocol -all +TLSv1.3
+
+    # KEX: P-384 (secp384r1)
+    SSLOpenSSLConfCmd Groups secp384r1
+    # Ciphersuite
+    SSLOpenSSLConfCmd Ciphersuites {{ tls_cipher }}
+
+    # Cert chain
+    SSLCertificateChainFile    /etc/pki/regular-A2-CA/certs/regular-A2.chain.pem
+
+    # Cert
+    SSLCertificateKeyFile /etc/pki/regular-A2-CA/private/virtualhost.key.pem
+    SSLCertificateFile    /etc/pki/regular-A2-CA/certs/virtualhost.cert.pem
+
+    <Directory /var/www/a2>
+        Require all granted
+    </Directory>
+</VirtualHost>

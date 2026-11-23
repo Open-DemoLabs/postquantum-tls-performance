@@ -1,0 +1,25 @@
+---
+
+# Copyright 2026 José Ángel de Bustos Pérez & Josep Andreu Font
+#   Author: José Ángel de Bustos Pérez <jadebustos@gmail.com>
+#           Josep Andreu Font <jsp.andreu@gmail.com>
+#
+# This is free software: you can redistribute it and/or modify it under the terms of 
+# the GNU General Public License v3 as published by the Free Software Foundation.
+# This workshop is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+# See the GNU General Public License v3 for more details.
+
+# You should have received a copy of the GNU General Public License v3 along with the this software.
+# If not, see https://www.gnu.org/licenses/gpl-3.0.en.html.
+
+- name: update trust store
+  ansible.builtin.command:
+    cmd: /usr/bin/update-ca-trust extract
+  become: true
+
+- name: reboot to apply crypto policy
+  ansible.builtin.reboot:
+    msg: "Rebooting to apply crypto policy {{ cp_target }}"
+    reboot_timeout: 10 
+  become: true

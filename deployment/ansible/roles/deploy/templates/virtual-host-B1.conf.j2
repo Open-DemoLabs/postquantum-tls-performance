@@ -1,0 +1,35 @@
+# /etc/httpd/conf.d/virtual-host-B1.conf
+# B1 - PQC Enterprise FIPS 205, KEX: X25519MLKEM768, DIGITAL SIGNATURE: SLH-DSA-SHA2-192s (hash-based)
+# Only TLS 1.3, only X25519MLKEM768 (hybrid)
+
+Listen 11443 https
+
+<VirtualHost *:11443>
+    ServerName {{ webserver }}
+
+    DocumentRoot /var/www/b1
+    LogFormat "%h %t \"%r\" %>s %b %D %{SSL_PROTOCOL}x %{SSL_CIPHER}x %{SSL_GROUP}x %{SSL_SERVER_A_SIG}x" pqc
+    ErrorLog  /var/log/httpd/b1_error.log
+    CustomLog /var/log/httpd/b1_access.log pqc
+
+    SSLEngine on
+
+    # TLS 1.3
+    SSLProtocol -all +TLSv1.3
+
+    # KEX: X25519MLKEM768 (hybrid), DIGITAL SIGNATURE: SLH-DSA-SHA2-192s (hash-based)
+    SSLOpenSSLConfCmd Groups X25519MLKEM768
+    # Ciphersuite
+    SSLOpenSSLConfCmd Ciphersuites {{ tls_cipher }}
+
+    # Cert chain
+    SSLCertificateChainFile    /etc/pki/regular-B1-CA/certs/regular-B1.chain.pem
+
+    # Cert
+    SSLCertificateKeyFile /etc/pki/regular-B1-CA/private/virtualhost.key.pem
+    SSLCertificateFile    /etc/pki/regular-B1-CA/certs/virtualhost.cert.pem
+
+    <Directory /var/www/b1>
+        Require all granted
+    </Directory>
+</VirtualHost>

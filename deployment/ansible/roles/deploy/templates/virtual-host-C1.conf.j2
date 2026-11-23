@@ -1,0 +1,35 @@
+# /etc/httpd/conf.d/virtual-host-C1.conf
+# C1 - PQC CNSA 2.0: KEX ML-KEM-1024 DIGITAL SIGNATURE ML-DSA-87
+# Only TLS 1.3, only ML-KEM-1024 raw (not hybrid)
+
+Listen 12443 https
+
+<VirtualHost *:12443>
+    ServerName {{ webserver }}
+
+    DocumentRoot /var/www/c1
+    LogFormat "%h %t \"%r\" %>s %b %D %{SSL_PROTOCOL}x %{SSL_CIPHER}x %{SSL_GROUP}x %{SSL_SERVER_A_SIG}x" pqc
+    ErrorLog  /var/log/httpd/c1_error.log
+    CustomLog /var/log/httpd/c1_access.log pqc
+
+    SSLEngine on
+
+    # TLS 1.3
+    SSLProtocol -all +TLSv1.3
+
+    # KEX: ML-KEM-1024 raw (not hybrid)
+    SSLOpenSSLConfCmd Groups MLKEM1024
+    # Ciphersuite
+    SSLOpenSSLConfCmd Ciphersuites {{ tls_cipher }}    
+
+    # Cert chain
+    SSLCertificateChainFile    /etc/pki/regular-C1-CA/certs/regular-C1.chain.pem
+
+    # Cert
+    SSLCertificateKeyFile /etc/pki/regular-C1-CA/private/virtualhost.key.pem
+    SSLCertificateFile    /etc/pki/regular-C1-CA/certs/virtualhost.cert.pem
+
+    <Directory /var/www/c1>
+        Require all granted
+    </Directory>
+</VirtualHost>

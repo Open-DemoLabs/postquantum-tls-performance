@@ -1,0 +1,97 @@
+---
+
+# Copyright 2026 José Ángel de Bustos Pérez & Josep Andreu Font
+#   Author: José Ángel de Bustos Pérez <jadebustos@gmail.com>
+#           Josep Andreu Font <jsp.andreu@gmail.com>
+#
+# This is free software: you can redistribute it and/or modify it under the terms of 
+# the GNU General Public License v3 as published by the Free Software Foundation.
+# This workshop is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+# See the GNU General Public License v3 for more details.
+
+# You should have received a copy of the GNU General Public License v3 along with this software.
+# If not, see https://www.gnu.org/licenses/gpl-3.0.en.html.
+
+rpms_pqc: ['openssl', 'openssl-libs', 'crypto-policies', 'crypto-policies-scripts']
+rpms_httpd: ['httpd', 'mod_ssl']
+
+# user that will be used to run the playbook, and that will own the exported CA certificates
+playbook_user: 'jadebustos'
+
+webserver: 'web.lab.example.com'
+
+passphrase: '{{ lookup("env", "PQC_CA_PASSPHRASE") }}'
+
+ca_days: 365
+ca_C: 'SP'
+ca_ST: 'Madrid'
+ca_L: 'Madrid'
+ca_O: 'PQC vs Classical'
+
+export_cas_certs_dir: '/tmp/cas-certs'
+
+tls_cipher: 'TLS_AES_256_GCM_SHA384'
+
+root_ca:
+  - name: 'root-A1'
+    openssl_genkey: '-algorithm ML-DSA-65 -aes-256-cbc'
+    ca_ou: 'PKI-A1'
+  - name: 'root-A2'
+    openssl_genkey: '-algorithm EC -pkeyopt ec_paramgen_curve:P-384 -pkeyopt ec_param_enc:named_curve -aes-256-cbc'
+    ca_ou: 'PKI-A2'
+  - name: 'root-B1'
+    openssl_genkey: '-algorithm SLH-DSA-SHA2-192s -aes-256-cbc'
+    ca_ou: 'PKI-B1'
+  - name: 'root-C1'
+    openssl_genkey: '-algorithm ML-DSA-87 -aes-256-cbc'
+    ca_ou: 'PKI-C1'
+  - name: 'root-C2'
+    openssl_genkey: '-algorithm EC -pkeyopt ec_paramgen_curve:P-521 -pkeyopt ec_param_enc:named_curve -aes-256-cbc'
+    ca_ou: 'PKI-C2'
+
+regular_ca:
+  - name: 'regular-A1'
+    openssl_genkey: '-algorithm ML-DSA-65 -aes-256-cbc'
+    root_ca: 'root-A1'
+    virtual_host: 'virtual-host-A1.conf'
+    openssl_genkey_virtualhost: '-algorithm ML-DSA-65'
+    document_root: '/var/www/a1'
+    https_port: 10443
+    ca_ou: 'PKI-A1'
+  - name: 'regular-A2'
+    openssl_genkey: '-algorithm EC -pkeyopt ec_paramgen_curve:P-384 -pkeyopt ec_param_enc:named_curve'
+    root_ca: 'root-A2'
+    virtual_host: 'virtual-host-A2.conf'
+    openssl_genkey_virtualhost: '-algorithm EC -pkeyopt ec_paramgen_curve:P-384 -pkeyopt ec_param_enc:named_curve'
+    document_root: '/var/www/a2'
+    https_port: 8443
+    ca_ou: 'PKI-A2'
+  - name: 'regular-B1'
+    openssl_genkey: '-algorithm SLH-DSA-SHA2-192s -aes-256-cbc'
+    root_ca: 'root-B1'
+    virtual_host: 'virtual-host-B1.conf'
+    # SLH-DSA-SHA2-192s can't be used in a TLS handshake for server authentication, 
+    # so we use ML-DSA-65 for the virtual host key instead
+    openssl_genkey_virtualhost: '-algorithm ML-DSA-65' 
+    document_root: '/var/www/b1'
+    https_port: 11443
+    ca_ou: 'PKI-B1'
+  - name: 'regular-C1'
+    openssl_genkey: '-algorithm ML-DSA-87 -aes-256-cbc'
+    root_ca: 'root-C1'
+    virtual_host: 'virtual-host-C1.conf'
+    openssl_genkey_virtualhost: '-algorithm ML-DSA-87'
+    document_root: '/var/www/c1'
+    ca_ou: 'PKI-C1'
+    https_port: 12443
+  - name: 'regular-C2'
+    openssl_genkey: '-algorithm EC -pkeyopt ec_paramgen_curve:P-521 -pkeyopt ec_param_enc:named_curve -aes-256-cbc'
+    root_ca: 'root-C2'
+    virtual_host: 'virtual-host-C2.conf'
+    openssl_genkey_virtualhost: '-algorithm EC -pkeyopt ec_paramgen_curve:P-521 -pkeyopt ec_param_enc:named_curve'
+    document_root: '/var/www/c2'
+    https_port: 9443
+    ca_ou: 'PKI-C2'
+
+           

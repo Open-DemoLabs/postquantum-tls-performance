@@ -1,0 +1,77 @@
+---
+
+# Copyright 2026 José Ángel de Bustos Pérez & Josep Andreu Font
+#   Author: José Ángel de Bustos Pérez <jadebustos@gmail.com>
+#           Josep Andreu Font <jsp.andreu@gmail.com>
+#
+# This is free software: you can redistribute it and/or modify it under the terms of 
+# the GNU General Public License v3 as published by the Free Software Foundation.
+# This workshop is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+# See the GNU General Public License v3 for more details.
+
+# You should have received a copy of the GNU General Public License v3 along with this software.
+# If not, see https://www.gnu.org/licenses/gpl-3.0.en.html.
+
+- name: create directories for root CAs
+  ansible.builtin.file:
+    path: "/etc/pki/{{ item.0 }}-CA/{{ item.1 }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:  "{{ root_ca | map(attribute='name') | product(['certs', 'crl', 'newcerts', 'private']) | list }}"
+
+- name: configure perms for the private root CAs directories
+  ansible.builtin.file:
+    path: "/etc/pki/{{ item }}-CA/private/"
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  loop:  "{{ root_ca | map(attribute='name') | list }}"
+
+- name: copy ca files to the root CAs directories
+  ansible.builtin.copy:
+    src: "{{ item.1 }}"
+    dest: "/etc/pki/{{ item.0 }}-CA/{{ item.1 }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ root_ca | map(attribute='name') | product(['index.txt', 'serial', 'crlnumber']) | list }}"
+
+- name: copy ca configuration files to the root CAs directories
+  ansible.builtin.copy:
+    src: "openssl-{{ item }}-ca.conf"
+    dest: "/etc/pki/{{ item }}-CA/"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ root_ca | map(attribute='name') | list }}"  
+
+- name: generate private key for root CAs
+  ansible.builtin.command:
+    cmd: >
+      /usr/bin/openssl genpkey {{ item.openssl_genkey }} -pass pass:{{ passphrase }} -out /etc/pki/{{ item.name }}-CA/private/{{ item.name }}.key.pem
+    creates: "/etc/pki/{{ item.name }}-CA/private/{{ item.name }}.key.pem"
+  loop: "{{ root_ca }}"     
+
+- name: Enforce restrictive permissions on private keys for root CAs
+  ansible.builtin.file:
+    path: "/etc/pki/{{ item.name }}-CA/private/{{ item.name }}.key.pem"
+    mode: '0400'
+    owner: root
+    group: root  
+  loop: "{{ root_ca }}"  
+
+- name: create self-signed root CA certificates
+  ansible.builtin.command:
+    cmd: >
+      /usr/bin/openssl req -x509 -new -config /etc/pki/{{ item.name }}-CA/openssl-{{ item.name }}-ca.conf 
+        -key /etc/pki/{{ item.name }}-CA/private/{{ item.name }}.key.pem -days {{ ca_days }} -extensions v3_ca 
+        -subj "/C={{ ca_C }}/ST={{ca_ST}}/L={{ ca_L }}/O={{ca_O}}/OU={{ item.ca_ou }}/CN={{ item.name }}-CA" 
+        -out /etc/pki/{{ item.name }}-CA/certs/{{ item.name }}-ca.cert.pem -passin env:CA_KEY_PASS
+    creates: "/etc/pki/{{ item.name }}-CA/certs/{{ item.name }}-ca.cert.pem"
+  environment:
+    CA_KEY_PASS: "{{ passphrase }}"  
+  loop: "{{ root_ca }}"     

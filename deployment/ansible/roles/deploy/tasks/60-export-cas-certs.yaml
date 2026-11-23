@@ -1,0 +1,60 @@
+---
+
+# Copyright 2026 José Ángel de Bustos Pérez & Josep Andreu Font
+#   Author: José Ángel de Bustos Pérez <jadebustos@gmail.com>
+#           Josep Andreu Font <jsp.andreu@gmail.com>
+#
+# This is free software: you can redistribute it and/or modify it under the terms of 
+# the GNU General Public License v3 as published by the Free Software Foundation.
+# This workshop is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+# See the GNU General Public License v3 for more details..
+
+# You should have received a copy of the GNU General Public License v3 along with this software.
+# If not, see https://www.gnu.org/licenses/gpl-3.0.en.html.
+
+- name: create directories for certificate CAs export
+  ansible.builtin.file:
+    path: "{{ export_cas_certs_dir }}"
+    state: directory
+    owner: "{{ playbook_user }}"
+    group: "{{ playbook_user }}"
+    mode: '0755'
+  delegate_to: localhost
+  run_once: true
+
+- name: get sha256 for root CAs
+  ansible.builtin.command:
+    cmd: "openssl x509 -in /etc/pki/{{ item.name }}-CA/certs/{{ item.name }}-ca.cert.pem -noout -fingerprint -sha256"
+  loop: "{{ root_ca }}"
+  register: root_ca_fp
+  changed_when: false
+
+- name: fetch every root CA certificate with unique name
+  ansible.builtin.fetch:
+    src: "/etc/pki/{{ item.item.name }}-CA/certs/{{ item.item.name }}-ca.cert.pem"
+    remote_src: true
+    dest: >-
+      {{ export_cas_certs_dir }}/ca-{{
+        item.stdout | regex_replace('^.*Fingerprint=', '') | regex_replace(':', '')
+      }}.pem
+    flat: true
+  loop: "{{ root_ca_fp.results }}"
+
+- name: get sha256 for regular CAs
+  ansible.builtin.command:
+    cmd: "openssl x509 -in /etc/pki/{{ item.name }}-CA/certs/{{ item.name }}.cert.pem -noout -fingerprint -sha256"
+  loop: "{{ regular_ca }}"
+  register: regular_ca_fp
+  changed_when: false
+
+- name: fetch every regular CA certificate with unique name
+  ansible.builtin.fetch:
+    src: "/etc/pki/{{ item.item.name }}-CA/certs/{{ item.item.name }}.cert.pem"
+    remote_src: true
+    dest: >-
+      {{ export_cas_certs_dir }}/ca-{{
+        item.stdout | regex_replace('^.*Fingerprint=', '') | regex_replace(':', '')
+      }}.pem
+    flat: true
+  loop: "{{ regular_ca_fp.results }}"  

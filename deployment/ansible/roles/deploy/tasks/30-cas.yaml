@@ -1,0 +1,108 @@
+---
+
+# Copyright 2026 José Ángel de Bustos Pérez & Josep Andreu Font
+#   Author: José Ángel de Bustos Pérez <jadebustos@gmail.com>
+#           Josep Andreu Font <jsp.andreu@gmail.com>
+#
+# This is free software: you can redistribute it and/or modify it under the terms of 
+# the GNU General Public License v3 as published by the Free Software Foundation.
+# This workshop is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+# See the GNU General Public License v3 for more details.
+
+# You should have received a copy of the GNU General Public License v3 along with this software.
+# If not, see https://www.gnu.org/licenses/gpl-3.0.en.html.
+
+- name: create directories for regular CAs
+  ansible.builtin.file:
+    path: "/etc/pki/{{ item.0 }}-CA/{{ item.1 }}/"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:  "{{ regular_ca | map(attribute='name') | product(['certs', 'crl', 'newcerts', 'private']) | list }}"
+
+- name: configure perms for the private regular CAs directories
+  ansible.builtin.file:
+    path: "/etc/pki/{{ item }}-CA/private/"
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+  loop:  "{{ regular_ca | map(attribute='name') | list }}"
+
+- name: copy ca files to regular CAs directories
+  ansible.builtin.copy:
+    src: "{{ item.1 }}"
+    dest: "/etc/pki/{{ item.0 }}-CA/{{ item.1 }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ regular_ca | map(attribute='name') | product(['index.txt', 'serial', 'crlnumber']) | list }}"
+
+- name: copy ca configuration files to the regular CAs directories
+  ansible.builtin.copy:
+    src: "openssl-{{ item }}-ca.conf"
+    dest: "/etc/pki/{{ item }}-CA/"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ regular_ca | map(attribute='name') | list }}"  
+
+- name: generate private key for regularCAs
+  ansible.builtin.command:
+    cmd: >
+      /usr/bin/openssl genpkey {{ item.openssl_genkey }} -pass pass:{{ passphrase }} -out /etc/pki/{{ item.name }}-CA/private/{{ item.name }}.key.pem
+    creates: "/etc/pki/{{ item.name }}-CA/private/{{ item.name }}.key.pem"
+  loop: "{{ regular_ca }}"     
+
+- name: enforce restrictive permissions on private keys for regular CAs
+  ansible.builtin.file:
+    path: "/etc/pki/{{ item.name }}-CA/private/{{ item.name }}.key.pem"
+    mode: '0400'
+    owner: root
+    group: root  
+  loop: "{{ regular_ca }}"  
+
+- name: generate csr for regular CAs
+  ansible.builtin.command:
+    cmd: >
+      /usr/bin/openssl req -new -config /etc/pki/{{ item.root_ca }}-CA/openssl-{{ item.root_ca }}-ca.conf
+        -key /etc/pki/{{ item.name }}-CA/private/{{ item.name }}.key.pem
+        -subj "/C={{ ca_C }}/ST={{ca_ST}}/L={{ ca_L }}/O={{ca_O}}/OU={{ item.ca_ou }}/CN={{ item.name }}-CA"
+        -out /etc/pki/{{ item.name }}-CA/certs/{{ item.name }}.csr.pem -passin env:CA_KEY_PASS
+    creates: "/etc/pki/{{ item.name }}-CA/certs/{{ item.name }}.csr.pem"
+  environment:
+    CA_KEY_PASS: "{{ passphrase }}" 
+  loop: "{{ regular_ca }}"
+
+- name: sign csr for regular CAs with root CAs
+  ansible.builtin.command:
+    cmd: >
+      /usr/bin/openssl ca -batch -config /etc/pki/{{ item.root_ca }}-CA/openssl-{{ item.root_ca }}-ca.conf -extensions v3_intermediate_ca
+        -days {{ ca_days }} -notext -in /etc/pki/{{ item.name }}-CA/certs/{{ item.name }}.csr.pem
+        -out /etc/pki/{{ item.name }}-CA/certs/{{ item.name }}.cert.pem -passin env:CA_KEY_PASS
+    creates: "/etc/pki/{{ item.name }}-CA/certs/{{ item.name }}.cert.pem"
+  environment:
+    CA_KEY_PASS: "{{ passphrase }}"      
+  loop: "{{ regular_ca }}"  
+
+- name: create certification chain for regular CAs (concatenate cert files on remote host)
+  ansible.builtin.shell:
+    cmd: >
+      cat /etc/pki/{{ item.name }}-CA/certs/{{ item.name }}.cert.pem \
+          /etc/pki/{{ item.root_ca }}-CA/certs/{{ item.root_ca }}-ca.cert.pem \
+          > /etc/pki/{{ item.name }}-CA/certs/{{ item.name }}.chain.pem
+    creates: /etc/pki/{{ item.name }}-CA/certs/{{ item.name }}.chain.pem
+  loop: "{{ regular_ca }}" 
+  register: _chain
+  changed_when: true
+
+- name: enforce permissions on the chain file for regular CAs
+  ansible.builtin.file:
+    path: /etc/pki/{{ item.name }}-CA/certs/{{ item.name }}.chain.pem
+    mode: '0444'
+    owner: root
+    group: root   
+  loop: "{{ regular_ca }}" 
+

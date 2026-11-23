@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PQC TLS Evaluation — Test Endpoint</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2029;
+      --border: #2a333f;
+      --fg: #e6edf3;
+      --muted: #8b949e;
+      --accent: #4dabf7;
+      --ok: #51cf66;
+      --mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      padding: 2rem;
+    }
+    .card {
+      width: 100%;
+      max-width: 640px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2.5rem;
+    }
+    h1 {
+      margin: 0 0 .25rem;
+      font-size: 1.4rem;
+      letter-spacing: -.01em;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: .9rem;
+      margin-bottom: 2rem;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      background: rgba(81, 207, 102, .12);
+      color: var(--ok);
+      border: 1px solid rgba(81, 207, 102, .3);
+      padding: .35rem .75rem;
+      border-radius: 999px;
+      font-size: .8rem;
+      font-weight: 600;
+      margin-bottom: 2rem;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--ok);
+    }
+    dl {
+      margin: 0;
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      gap: .75rem 1.5rem;
+    }
+    dt {
+      color: var(--muted);
+      font-size: .85rem;
+      align-self: center;
+    }
+    dd {
+      margin: 0;
+      font-family: var(--mono);
+      font-size: .9rem;
+      color: var(--fg);
+      word-break: break-all;
+    }
+    .note {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: .8rem;
+      line-height: 1.5;
+    }
+    .note code {
+      font-family: var(--mono);
+      color: var(--accent);
+      font-size: .78rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="status"><span class="dot"></span>TLS endpoint reachable</div>
+    <h1>PQC TLS Evaluation</h1>
+    <p class="sub">Static test payload — RHEL 10.2 / OpenSSL 3.5 / Apache mod_ssl</p>
+
+    <dl>
+      <dt>Served at</dt>  <dd id="time">—</dd>
+    </dl>
+
+    <p class="note">
+      This page is identical across all scenarios (A.1, A.2, B.1, C.1, C.2).
+      The port above identifies which endpoint answered. To confirm the negotiated
+      key exchange and signature, inspect the handshake client-side, e.g.
+      <code>openssl s_client -connect host:port -tls1_3</code> and read
+      <code>Negotiated TLS1.3 group</code> and <code>Peer signature type</code>.
+    </p>
+  </main>
+
+  <script>
+    // Read-only reflection of the location the client reached. No server-side logic.
+    (function () {
+      var loc = window.location;
+      document.getElementById("host").textContent = loc.hostname || "—";
+      document.getElementById("port").textContent = loc.port || "(default)";
+      document.getElementById("scheme").textContent = loc.protocol.replace(":", "");
+      document.getElementById("time").textContent = new Date().toISOString();
+    })();
+  </script>
+</body>
+</html>

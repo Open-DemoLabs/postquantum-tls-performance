@@ -1,0 +1,8 @@
+[all:vars]
+ansible_user=root
+
+[server]
+192.0.2.10
+
+[client]
+192.0.2.20

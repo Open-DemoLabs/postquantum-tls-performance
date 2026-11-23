@@ -1,0 +1,36 @@
+---
+
+# Copyright 2026 José Ángel de Bustos Pérez & Josep Andreu Font
+#   Author: José Ángel de Bustos Pérez <jadebustos@gmail.com>
+#           Josep Andreu Font <jsp.andreu@gmail.com>
+#
+# This is free software: you can redistribute it and/or modify it under the terms of 
+# the GNU General Public License v3 as published by the Free Software Foundation.
+# This workshop is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+# See the GNU General Public License v3 for more details.
+
+# You should have received a copy of the GNU General Public License v3 along with this software.
+# If not, see https://www.gnu.org/licenses/gpl-3.0.en.html.
+
+- name: read current crypto policy
+  ansible.builtin.command: /usr/bin/update-crypto-policies --show
+  register: cp_current
+  changed_when: false
+
+# Keeps the current base policy and any existing subpolicies
+# (e.g. DEFAULT:AD-SUPPORT -> DEFAULT:AD-SUPPORT:PQ, FIPS -> FIPS:PQ)
+- name: compute target policy
+  ansible.builtin.set_fact:
+    cp_target: >-
+      {{ cp_current.stdout
+          if 'PQ' in cp_current.stdout.split(':')
+          else cp_current.stdout ~ ':PQ' }}
+ 
+- name: apply PQ subpolicy
+  ansible.builtin.command: /usr/bin/update-crypto-policies --set {{ cp_target }}
+  when: cp_current.stdout != cp_target
+  notify: reboot to apply crypto policy
+
+- name: reboot now if policy changed
+  ansible.builtin.meta: flush_handlers
