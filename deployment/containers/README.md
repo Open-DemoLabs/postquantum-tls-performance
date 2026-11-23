@@ -15,7 +15,7 @@ The image is built in two stages:
 
 The final image contains no compiler, no sources and no `-devel` packages.
 
-You can create the container image or you can download it from [https://quay.io/repository/rhte_2019/wrk-pqc](https://quay.io/repository/rhte_2019/wrk-pqc)
+You can create the container image or you can download it from [https://quay.io/repository/rhte_2019/wrk-pqc](https://quay.io/repository/rhte_2019/wrk-pqc?tab=tags )
 
 ---
 
