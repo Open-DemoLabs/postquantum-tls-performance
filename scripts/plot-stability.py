@@ -28,21 +28,58 @@ from matplotlib.legend_handler import HandlerBase
 from matplotlib.patches import Patch, Rectangle
 
 parser = argparse.ArgumentParser(
-    description="Generate the stability campaign figures with a white or dark background."
+    description="Generate the stability campaign figures (PNG and SVG, optionally PDF) "
+                "with a white or dark background."
 )
 parser.add_argument(
-    "theme",
-    nargs="?",
+    "--results",
+    type=Path,
+    required=True,
+    help="Path to the results CSV (pqc_results_stability.csv)",
+)
+parser.add_argument(
+    "--cpu",
+    type=Path,
+    required=True,
+    help="Path to the CPU CSV (pqc_cpu_stability.csv)",
+)
+parser.add_argument(
+    "--bucket",
+    type=Path,
+    required=True,
+    help="Path to the histogram buckets CSV (pqc_histogram_buckets_stability.csv)",
+)
+parser.add_argument(
+    "--background",
     choices=["white", "dark"],
     default="dark",
     help="Figure background: 'white' or 'dark' (default: dark)",
 )
-THEME = parser.parse_args().theme
+parser.add_argument(
+    "--output",
+    type=Path,
+    default=Path.cwd(),
+    help="Base directory for the figures; they are written to its 'dark' or "
+         "'white' subdirectory (default: current directory)",
+)
+parser.add_argument(
+    "--pdf",
+    action="store_true",
+    help="Also write a PDF file of each figure",
+)
+ARGS = parser.parse_args()
 
-BASE = Path(__file__).resolve().parent
-DATA = BASE.parent / "benchmarks" / "2026-11-04-stability"
-OUT = BASE / "figures" / THEME
+THEME = ARGS.background
+RESULTS_CSV = ARGS.results
+CPU_CSV = ARGS.cpu
+BUCKETS_CSV = ARGS.bucket
+for csv_path in (RESULTS_CSV, CPU_CSV, BUCKETS_CSV):
+    if not csv_path.is_file():
+        parser.error(f"data file not found: {csv_path}")
+
+OUT = ARGS.output / THEME
 OUT.mkdir(parents=True, exist_ok=True)
+FORMATS = ("png", "svg", "pdf") if ARGS.pdf else ("png", "svg")
 
 PROFILES = [
     "classic-a2",
@@ -89,7 +126,7 @@ from collections import Counter
 
 # Read the original 25 wrk measurements from CSV (no embedded results).
 WRK = defaultdict(list)
-with open(DATA / 'pqc_results_stability.csv', newline='') as f:
+with open(RESULTS_CSV, newline='') as f:
     for r in csv.DictReader(f):
         WRK[int(r['round'])].append((r['profile'], float(r['wrk_req_s']), float(r['wrk_p50_ms']), float(r['wrk_p99_ms'])))
 assert len(WRK) == 5 and all(len(v) == 5 for v in WRK.values())
@@ -107,9 +144,9 @@ def quantile(bucket_counts, q):
         lower_bound,lower_count=upper_bound,upper_count
     return float('nan') # quantile in +Inf bucket is not identifiable
 
-with open(DATA / 'pqc_cpu_stability.csv',newline='') as f:
+with open(CPU_CSV,newline='') as f:
     prom=list(csv.DictReader(f))
-with open(DATA / 'pqc_histogram_buckets_stability.csv',newline='') as f:
+with open(BUCKETS_CSV,newline='') as f:
     bucket_rows=list(csv.DictReader(f))
 assert len(prom)==25 and len(bucket_rows)==525, 'Unexpected CSV row counts'
 per_run=defaultdict(dict)
@@ -275,7 +312,7 @@ def footer(fig, text):
 
 def save(fig, name):
     name = name.replace("-dark", f"-{THEME}")
-    for ext in ("png", "pdf", "svg"):
+    for ext in FORMATS:
         fig.savefig(
             OUT / f"{name}.{ext}",
             dpi=300,
@@ -283,7 +320,7 @@ def save(fig, name):
         )
 
     plt.close(fig)
-    print(f"Created: {name} (PNG, PDF, SVG)")
+    print(f"Created: {name} ({', '.join(e.upper() for e in FORMATS)})")
 
 x = np.arange(len(PROFILES))
 
