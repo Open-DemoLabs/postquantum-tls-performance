@@ -4,16 +4,20 @@
 
 ### **What does quantum-resistant HTTPS actually cost?**
 
-**An experimental performance study on Red Hat Enterprise Linux**
+**What changes when the application stops opening a new TLS connection for every request?**
+
+An experimental performance study on Red Hat Enterprise Linux — **three separate campaigns, 105 measured runs**.
+
+*We started by benchmarking TLS profiles under load. Then we verified mutual authentication. Finally, we changed the connection policy—and the observed hybrid key-exchange throughput gap became smaller in both tested workloads.*
 
 `OpenSSL 3.5` · `Apache HTTP Server` · `wrk` · `eBPF` · `Prometheus` · `Grafana`
 
 ![RHEL](https://img.shields.io/badge/RHEL-9.8-EE0000?style=for-the-badge)
 ![TLS](https://img.shields.io/badge/TLS-1.3-2563EB?style=for-the-badge)
-![Runs](https://img.shields.io/badge/Benchmark-25_runs-7C3AED?style=for-the-badge)
+![Runs](https://img.shields.io/badge/Measured-105_runs_in_3_campaigns-7C3AED?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Experimental-F59E0B?style=for-the-badge)
 
-**[Results](#-the-results-first) · [Why it matters](#-why-this-matters) · [Architecture](#-inside-the-lab) · [Methodology](#-how-we-tested) · [Figures](#-visualizations) · [Reproduce](#-reproducing-the-study)**
+**[HTTPS results](#-the-results-first) · [Verified mTLS](#-mutual-tls-extension-november-2026) · [Connection reuse](#-connection-reuse-when-the-workload-changes) · [Why it matters](#-why-this-matters) · [Methodology](#-how-we-tested) · [Figures](#-visualizations) · [Reproduce](#-reproducing-the-study)**
 
 </div>
 
@@ -85,6 +89,29 @@ With the observer **OFF**, Hybrid X25519MLKEM768 achieved **1,076.88 requests/s*
 
 ---
 
+## 🔁 Connection reuse: when the workload changes
+
+**What happens to the measured post-quantum TLS overhead when you stop paying for a new handshake on every HTTP request?**
+
+Our [40-run connection-reuse experiment](mtls/connection-reuse/README.md) compares **X25519** with **hybrid X25519MLKEM768**, keeping **TLS 1.3, ECDSA P-384 client/server authentication, and the cipher suite identical**. We changed the HTTP connection policy and repeated the experiment at two concurrency levels. Unlike the earlier mTLS campaign, these runs were collected with **eBPF instrumentation OFF**.
+
+| Concurrency | Fresh connections: Hybrid vs X25519 | HTTP keep-alive: Hybrid vs X25519 |
+|:--|--:|--:|
+| 2 threads · 10 connections | **−3.13%** | **−1.14%** |
+| 8 threads · 50 connections | **−2.52%** | **−0.80%** |
+
+*Differences are ratios of mean HTTP throughput (RPS) across five 120-second runs per condition. Negative values indicate lower Hybrid throughput in this testbed.*
+
+![Hybrid versus X25519 throughput differences and confidence intervals](mtls/connection-reuse/figures/dark/03-relative-difference-95ci-dark.png)
+
+**Why the gap changed:** Fresh mode established approximately **one full TLS handshake per HTTP request**; keep-alive served approximately **100 requests per full handshake** over already-established connections. The new workload reduced repeated TLS setup and markedly increased total application throughput. All 40 runs reported **zero TLS session resumptions**—connection reuse and session resumption are different mechanisms.
+
+**What this does *not* prove:** The smaller keep-alive gaps were not statistically distinguishable from zero with five paired rounds per condition, but that is **not proof of equivalent performance**. These are workload-level observations, not isolated ML-KEM CPU costs; the high-concurrency fresh tests also approached host CPU saturation. The campaigns use different workloads and must **not** have their RPS values pooled.
+
+**[Explore all seven dark-theme figures, raw results, methodology, and reproduction scripts →](mtls/connection-reuse/README.md)**
+
+---
+
 ## 🔎 Why this matters
 
 Post-quantum cryptography is becoming available in mainstream TLS stacks. But a microbenchmark of a signature or key-encapsulation operation cannot, by itself, predict application behavior.
@@ -96,7 +123,7 @@ This repository studies the performance of **a complete HTTPS workload** while e
 - **Host perspective:** CPU utilization collected through Prometheus and node exporter.
 - **Experimental perspective:** repeated runs, varied execution order, timestamped windows, and traceable CSV outputs.
 
-**Scope:** This **November 4 HTTPS campaign** excludes mutual TLS, proxies and Kubernetes. The repository also includes a **separate [November 2026 peer-verified mutual-TLS (mTLS) campaign](mtls/README.md)**; those measurements must not be pooled with the HTTPS campaign.
+**Scope:** The **November 4 HTTPS campaign** excludes mutual TLS, proxies and Kubernetes. Two additional, **separate** studies cover [peer-verified mTLS](mtls/README.md) and [mTLS connection reuse](mtls/connection-reuse/README.md). They use different TLS and workload conditions; their throughput measurements must not be pooled with the HTTPS campaign.
 
 ---
 
