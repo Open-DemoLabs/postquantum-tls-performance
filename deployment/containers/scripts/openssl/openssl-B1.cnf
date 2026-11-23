@@ -1,0 +1,32 @@
+# =============================================================================
+# wrk client OpenSSL configuration - Scenario B1
+# Key exchange: X25519MLKEM768 (hybrid) | Server certificate: SLH-DSA-SHA2-192s
+# Usage: podman run ... -e WRK_SCENARIO=B1 ...   (or -e OPENSSL_CONF=/srv/data/openssl-B1.cnf)
+#
+# This file deliberately does NOT include the system crypto-policies, so the
+# client offers exactly what is listed below (deterministic benchmarks).
+# =============================================================================
+
+# Make configuration errors fatal instead of silently ignored
+# (e.g. a misspelled group name would otherwise fall back to defaults).
+config_diagnostics = 1
+
+openssl_conf = openssl_init
+
+[openssl_init]
+ssl_conf = ssl_module
+
+[ssl_module]
+system_default = tls_client
+
+[tls_client]
+MinProtocol  = TLSv1.3
+MaxProtocol  = TLSv1.3
+Ciphersuites = TLS_AES_256_GCM_SHA384
+Groups       = X25519MLKEM768
+
+# Optional: restrict the signature algorithms offered by the client so the
+# handshake FAILS unless the server presents the expected certificate type.
+# Check the names supported by this build with:
+#   podman run --rm localhost/wrk-pqc:latest openssl list -signature-algorithms
+#SignatureAlgorithms = slhdsa_sha2_192s
