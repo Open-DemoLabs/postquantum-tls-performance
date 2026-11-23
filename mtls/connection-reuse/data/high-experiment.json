@@ -1,0 +1,18 @@
+{
+  "profiles": [
+    "x25519",
+    "hybrid"
+  ],
+  "connection_modes": [
+    "fresh",
+    "keepalive"
+  ],
+  "runs": 5,
+  "duration": 120,
+  "threads": 8,
+  "connections": 50,
+  "pause": 10,
+  "seed": 20261121,
+  "observer": "OFF (required)",
+  "wrk_sha256": "d18654b8d99e9fd043e877786d4515669ea359fab22e13b93f199046f13b4bc4"
+}
