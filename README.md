@@ -6,13 +6,13 @@
 
 **What changes when the application stops opening a new TLS connection for every request?**
 
-An experimental performance study on Red Hat Enterprise Linux — **three separate campaigns, 105 measured runs**.
+A reproducible performance study using open-source tools on Linux — **three separate campaigns, 105 measured runs**.
 
 *We started by benchmarking TLS profiles under load. Then we verified mutual authentication. Finally, we changed the connection policy—and the observed hybrid key-exchange throughput gap became smaller in both tested workloads.*
 
 `OpenSSL 3.5` · `Apache HTTP Server` · `wrk` · `eBPF` · `Prometheus` · `Grafana`
 
-![RHEL](https://img.shields.io/badge/RHEL-9.8-EE0000?style=for-the-badge)
+![Linux](https://img.shields.io/badge/Platform-Linux-2563EB?style=for-the-badge)
 ![TLS](https://img.shields.io/badge/TLS-1.3-2563EB?style=for-the-badge)
 ![Runs](https://img.shields.io/badge/Measured-105_runs_in_3_campaigns-7C3AED?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Experimental-F59E0B?style=for-the-badge)
