@@ -20,7 +20,6 @@ export_cas_certs_dir: '/tmp/cas-certs'
 scripts:
   - "tls1.3-handshake-check.sh"
 
-#webserver: "{{ lookup('web.lab.example.com', webserver) }}"
 webserver: '192.0.2.10' 
 
 tls_cipher: 'TLS_AES_256_GCM_SHA384' 
