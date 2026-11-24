@@ -28,6 +28,7 @@ containers/
 ├── ssl.c.patch                   # Patch for wrk source
 └── scripts/                      # Copied to /srv/scripts in the image
     ├── tls1.3-handshake-check.sh # tls1.3-handshake-check.sh test handshake
+    ├── tls1.3-handshake-env.sh   # tls1.3-handshake-env.sh environment variables
     ├── close.lua                 # "Connection: close" => one full handshake per request
     └── openssl/
         ├── openssl-A1.cnf        # X25519MLKEM768      (server cert ML-DSA-65)

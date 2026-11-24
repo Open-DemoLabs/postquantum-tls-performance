@@ -30,3 +30,5 @@ For the **3.** option we have several options:
 * **TLS_AES_128_CCM_SHA256 / ..._CCM_8_...** -> NIST Category 1 (IoT and constrained devices).
 
 As there are no Category 3 or equivalent in TLS we will use **TLS_AES_256_GCM_SHA384** (NIST Category 5 with AES-256 and SHA384) as Cipher in all tests. This election will use SHA384 for the **4.** option.
+
+![](images/tls13_algorithm_roles_simple.svg)
