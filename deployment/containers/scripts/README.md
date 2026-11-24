@@ -76,7 +76,8 @@ Other optional variables:
 
 1. Edit `tls1.3-handshake-env.sh` and set `APACHE_SERVER` and the `PORT_XX`
    values for your environment.
-2. **Source** it in your current shell (do not execute it):
+2. If you want the variables are available to be used by your scripts you can 
+   **Source** it in your current shell (do not execute it):
 
    ```bash
    source ./tls1.3-handshake-env.sh
@@ -118,8 +119,11 @@ unset APACHE_SERVER PORT_A1 PORT_A2 PORT_B1 PORT_C1 PORT_C2
 
 ## 4. Running the handshake check
 
+The script `tls1.3-handshake-check.sh` will automatically use the `tls1.3-handshake-env.sh` 
+script to create the shell variables so you do not need to do anything but configure it
+with the right values.
+
 ```bash
-source ./tls1.3-handshake-env.sh
 ./tls1.3-handshake-check.sh
 ```
 
@@ -132,13 +136,6 @@ over the exported ones:
 APACHE_SERVER=10.0.0.20 PORT_C1=443 ./tls1.3-handshake-check.sh
 ```
 
-Without sourcing the env file, all six variables must be given:
-
-```bash
-APACHE_SERVER=10.0.0.10 PORT_A1=10443 PORT_A2=8443 PORT_B1=11443 \
-PORT_C1=12443 PORT_C2=9443 ./tls1.3-handshake-check.sh
-```
-
 ### Endpoint positional argument
 
 The optional first argument still overrides the endpoint used for the
@@ -147,7 +144,7 @@ connections (for example, to connect by a different IP or hostname).
 is considered:
 
 ```bash
-./tls1.3-handshake-check.sh web.example.com
+./tls1.3-handshake-check.sh web.lab.example.com
 ```
 
 ### Inside the `wrk-pqc` container
