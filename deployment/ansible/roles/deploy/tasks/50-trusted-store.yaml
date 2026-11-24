@@ -32,7 +32,7 @@
     group: root
     mode: "0644"
   loop: "{{ root_ca_fp.results }}"
-  notify: actualizar trust store
+  notify: update trust store
 
 - name: get sha256 for regular CAs
   ansible.builtin.command:
@@ -53,4 +53,4 @@
     group: root
     mode: "0644"
   loop: "{{ regular_ca_fp.results }}"
-  notify: actualizar trust store
+  notify: update trust store

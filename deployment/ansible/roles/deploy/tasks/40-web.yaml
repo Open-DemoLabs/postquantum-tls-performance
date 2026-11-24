@@ -103,9 +103,27 @@
     state: enabled
   loop: "{{ regular_ca }}"
 
+- name: configure mod_ssl cache to avoid TLS handshake serialization (SSLSessionCache)
+  ansible.builtin.lineinfile:
+    path: /etc/httpd/conf.d/ssl.conf 
+    regexp: '^\s*{{ item.pattern }}\s+.*'
+    line: '{{ item.configuration }}'
+    state: present
+    backup: yes
+  loop:
+    - { pattern: 'SSLSessionCache', configuration: 'SSLSessionCache none' }
+
+- name: configure mod_ssl cache to avoid TLS handshake serialization (SSLSessionTickets)
+  ansible.builtin.lineinfile:
+    path: /etc/httpd/conf.d/ssl.conf 
+    insertafter: "^SSLSessionCacheTimeout"
+    line: "SSLSessionTickets off"
+    state: present
+    backup: yes
+
 - name: enabling service httpd and ensuring it is not masked
   ansible.builtin.systemd_service:
     name: httpd
     enabled: true
     masked: no
-    state: started  
+    state: started
