@@ -13,9 +13,9 @@
 # You should have received a copy of the GNU General Public License v3 along with this software.
 # If not, see https://www.gnu.org/licenses/gpl-3.0.en.html.
 
-- name: tests
-  hosts: client
+- name: deploy environment pqc vs classical (client)
+  hosts: clients
   gather_facts: false
 
   roles:
-    - tests
+    - client

@@ -4,5 +4,5 @@ ansible_user=ansible
 [server]
 192.168.122.140
 
-[client]
-192.0.2.20
+[clients]
+192.168.122.141

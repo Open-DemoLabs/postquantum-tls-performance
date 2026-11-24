@@ -12,16 +12,9 @@
 # You should have received a copy of the GNU General Public License v3 along with this software.
 # If not, see https://www.gnu.org/licenses/gpl-3.0.en.html.
 
-rpms_pqc: ['openssl', 'openssl-libs', 'crypto-policies', 'crypto-policies-scripts']
-
-scripts_dir: "tests-scripts"
-export_cas_certs_dir: '/tmp/cas-certs'
-
-scripts:
-  - "tls1.3-handshake-check.sh"
-
-webserver: '192.0.2.10' 
-
-tls_cipher: 'TLS_AES_256_GCM_SHA384' 
-aead: 'AES_256_GCM'
-hash: 'SHA384'
+- name: descargar imagen de contenedor desde un registro
+  containers.podman.podman_image:
+    name: "{{ container_image }}"
+    tag: "{{ container_tag }}"
+    state: present
+    pull: true

@@ -10,18 +10,17 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
 # See the GNU General Public License v3 for more details.
 
-# You should have received a copy of the GNU General Public License v3 along with this software.
+# You should have received a copy of the GNU General Public License v3 along with the this software.
 # If not, see https://www.gnu.org/licenses/gpl-3.0.en.html.
 
-- name: create directory for test scripts
-  ansible.builtin.file:
-    path: "~/{{ scripts_dir }}"
-    state: directory
-    mode: '0755'
+# handlers/main.yml
+- name: update trust store
+  ansible.builtin.command:
+    cmd: /usr/bin/update-ca-trust extract
+  become: true
 
-- name: create test scripts
-  ansible.builtin.template:
-    src: "{{ item }}.j2"
-    dest: "~/{{ scripts_dir }}/{{ item }}"
-    mode: '0755'
-  loop: "{{ scripts }}"
+- name: reboot to apply crypto policy
+  ansible.builtin.reboot:
+    msg: "Rebooting to apply crypto policy {{ cp_target }}"
+    reboot_timeout: 300 
+  become: true  

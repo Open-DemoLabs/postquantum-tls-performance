@@ -20,4 +20,4 @@
     owner: root
     group: root
     mode: "0644"
-  notify: actualizar trust store
+  notify: update trust store

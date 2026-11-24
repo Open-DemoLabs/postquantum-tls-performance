@@ -1,8 +1,7 @@
 ---
 
-# Copyright 2026 José Ángel de Bustos Pérez & Josep Andreu Font
+# Copyright 2026 José Ángel de Bustos Pérez 
 #   Author: José Ángel de Bustos Pérez <jadebustos@gmail.com>
-#           Josep Andreu Font <jsp.andreu@gmail.com>
 #
 # This is free software: you can redistribute it and/or modify it under the terms of 
 # the GNU General Public License v3 as published by the Free Software Foundation.
@@ -10,17 +9,19 @@
 # without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
 # See the GNU General Public License v3 for more details.
 
-# You should have received a copy of the GNU General Public License v3 along with the this software.
+# You should have received a copy of the GNU General Public License v3 along with this software.
 # If not, see https://www.gnu.org/licenses/gpl-3.0.en.html.
 
-# handlers/main.yml
-- name: actualizar trust store
-  ansible.builtin.command:
-    cmd: /usr/bin/update-ca-trust extract
-  become: true
+rpms_pqc: ['openssl', 'openssl-libs', 'crypto-policies', 'crypto-policies-scripts', 'podman']
 
-- name: reboot to apply crypto policy
-  ansible.builtin.reboot:
-    msg: "Rebooting to apply crypto policy {{ cp_target }}"
-    reboot_timeout: 10 
-  become: true  
+scripts_dir: "tests-scripts"
+export_cas_certs_dir: '/tmp/cas-certs'
+
+container_image: 'quay.io/rhte_2019/wrk-pqc'
+container_tag: 'latest'
+
+webserver: '192.168.122.140' 
+
+tls_cipher: 'TLS_AES_256_GCM_SHA384' 
+aead: 'AES_256_GCM'
+hash: 'SHA384'
