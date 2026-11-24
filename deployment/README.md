@@ -1,10 +1,6 @@
 # PQC vs Classical
 
-The following stuff was create to write an article comparing PQC and Classical encryption algorithms.
-
-## Test cases
-
-The following scenarios were selected:
+The following test cases will be compared for the PQC and Classical encryption algorithms comparison we will perform:
 
 | Test | NIST Cat | Description | KEX | Digital Signature | Virtual Host Port |
 |------|----------|-------------|-----|-------------------|-------------------|
