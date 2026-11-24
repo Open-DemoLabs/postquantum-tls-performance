@@ -31,12 +31,81 @@
 # ------------------------------------------------------------------------------
 set -u
 
-APACHE_SERVER=192.0.2.10
-PORT_A1=10443  # X25519MLKEM768 + ML-DSA-65
-PORT_A2=8443   # NIST P-384 + ECDSA-SHA384 
-PORT_B1=11443  # X25519MLKEM768 + SLH-DSA-SHA2-192s
-PORT_C1=12443  # ML-KEM-1024 + ML-DSA-87
-PORT_C2=9443   # NIST P-521 + ECDSA-SHA512
+# --- Target from the environment ----------------------------------------------
+# The server and the scenario ports are read from the bash environment. They are
+# not hardcoded. This script sources tls1.3-handshake-env.sh to set them:
+#   APACHE_SERVER : Apache server IP address or hostname
+#   PORT_A1       : X25519MLKEM768 + ML-DSA-65
+#   PORT_A2       : NIST P-384 + ECDSA-SHA384
+#   PORT_B1       : X25519MLKEM768 + SLH-DSA-SHA2-192s
+#   PORT_C1       : ML-KEM-1024 + ML-DSA-87
+#   PORT_C2       : NIST P-521 + ECDSA-SHA512
+REQUIRED_VARS=(APACHE_SERVER PORT_A1 PORT_A2 PORT_B1 PORT_C1 PORT_C2)
+
+# Env file: by default tls1.3-handshake-env.sh next to this script (symlinks
+# resolved). Override the location with HANDSHAKE_ENV_FILE.
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+ENV_FILE="${HANDSHAKE_ENV_FILE:-${SCRIPT_DIR}/tls1.3-handshake-env.sh}"
+
+if [[ ! -f "$ENV_FILE" || ! -r "$ENV_FILE" ]]; then
+  {
+    echo "ERROR: environment file not found or not readable: ${ENV_FILE}"
+    echo "       It must define: ${REQUIRED_VARS[*]}"
+    echo "       Place tls1.3-handshake-env.sh next to this script, or point"
+    echo "       HANDSHAKE_ENV_FILE at it:"
+    echo "         HANDSHAKE_ENV_FILE=/path/to/tls1.3-handshake-env.sh $0"
+  } >&2
+  exit 2
+fi
+
+# Values already present in the environment (export, "VAR=x ./script",
+# "podman run -e VAR=x") take precedence over the ones in the env file:
+# remember them, source the file, then restore them.
+declare -A preset=()
+for var in "${REQUIRED_VARS[@]}"; do
+  [[ -n "${!var:-}" ]] && preset[$var]="${!var}"
+done
+
+# shellcheck source=tls1.3-handshake-env.sh
+if ! source "$ENV_FILE" >/dev/null; then
+  echo "ERROR: failed to source environment file: ${ENV_FILE}" >&2
+  exit 2
+fi
+
+for var in "${!preset[@]}"; do
+  printf -v "$var" '%s' "${preset[$var]}"
+  export "${var?}"
+done
+
+missing=()
+for var in "${REQUIRED_VARS[@]}"; do
+  [[ -n "${!var:-}" ]] || missing+=("$var")
+done
+if (( ${#missing[@]} > 0 )); then
+  {
+    echo "ERROR: the following required environment variable(s) are not set or empty"
+    echo "       after sourcing ${ENV_FILE}:"
+    for var in "${missing[@]}"; do echo "         - ${var}"; done
+    echo "       Required: ${REQUIRED_VARS[*]}"
+    echo "       Define them in the env file, for example:"
+    echo "         export APACHE_SERVER=192.0.2.10"
+    echo "         export PORT_A1=10443"
+    echo "       or export them in the environment before running this script."
+  } >&2
+  exit 2
+fi
+
+bad_ports=()
+for var in PORT_A1 PORT_A2 PORT_B1 PORT_C1 PORT_C2; do
+  val="${!var}"
+  if [[ ! "$val" =~ ^[0-9]+$ ]] || (( 10#$val < 1 || 10#$val > 65535 )); then
+    bad_ports+=("${var}='${val}'")
+  fi
+done
+if (( ${#bad_ports[@]} > 0 )); then
+  echo "ERROR: invalid TCP port value(s) (expected an integer 1-65535): ${bad_ports[*]}" >&2
+  exit 2
+fi
 
 # --- Configuration ------------------------------------------------------------
 # The endpoint is a variable; it can be overridden as the first argument.
