@@ -14,7 +14,7 @@ You must configure the ansible variable **playbook_user** with the name of the u
 The following will configure the CAs used to sign and issue certificates for the Apache virtual hosts,  and the Apache virtual hosts will be created as well:
 
 ```bash
-$ ansible-playbook -i hosts deploy.yaml
+$ ansible-playbook -i hosts deploy-server.yaml
 ``` 
 
 If policy for PQC is not enabled it will be enabled and the server will be rebooted.
@@ -28,7 +28,7 @@ Yoy will also need to configure the ansible variable **webserver** with the Apac
 The following will configure the client machine, copying the ca certificates to the client machine and creating the test scripts:
 
 ```bash
-$ ansible-playbook -i hosts tests.yaml
+$ ansible-playbook -i hosts deploy-client.yaml
 ```
 
 If policy for PQC is not enabled it will be enabled and the client will be rebooted.
